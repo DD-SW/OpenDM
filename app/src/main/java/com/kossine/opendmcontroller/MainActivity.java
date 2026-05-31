@@ -35,9 +35,13 @@ public class MainActivity extends AppCompatActivity {
     private Button[] inputs = new Button[16];
     private int selected_input;
     private boolean[] selected_outputs = new boolean[16];
+    private boolean[] selected_routes = new boolean[3];
     private Button[] outputs = new Button[16];
     private Button connect;
     private Button send;
+    private Button audio;
+    private Button video;
+    private Button usb;
     private Socket connection;
     private boolean connected;
     private CompletableFuture exec = new CompletableFuture();
@@ -117,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
 
         connect = findViewById(R.id.connect_button);
         send = findViewById(R.id.send_button);
+        audio = findViewById(R.id.audio_button);
+        video = findViewById(R.id.video_button);
+        usb = findViewById(R.id.usb_button);
 
         selected_input = 0;
         for (int loopTimes = 0; loopTimes < 16; loopTimes++) {
@@ -172,7 +179,55 @@ public class MainActivity extends AppCompatActivity {
         connect.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                Connect();
+                Connect(true);
+            }
+        });
+
+        selected_routes[0] = true;
+        video.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                if(selected_routes[0] == false){
+                    selected_routes[0] = true;
+                    view.setBackgroundColor(Color.parseColor("#FF0000"));
+
+                }
+                    else{
+                    selected_routes[0] = false;
+                    view.setBackgroundColor(Color.parseColor("#505050"));
+                }
+            }
+        });
+
+        selected_routes[1] = true;
+        audio.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                if(selected_routes[1] == false){
+                    selected_routes[1] = true;
+                    view.setBackgroundColor(Color.parseColor("#FF0000"));
+
+                }
+                else{
+                    selected_routes[1] = false;
+                    view.setBackgroundColor(Color.parseColor("#505050"));
+                }
+            }
+        });
+
+        selected_routes[2] = true;
+        usb.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                if(selected_routes[2] == false){
+                    selected_routes[2] = true;
+                    view.setBackgroundColor(Color.parseColor("#FF0000"));
+
+                }
+                else{
+                    selected_routes[2] = false;
+                    view.setBackgroundColor(Color.parseColor("#505050"));
+                }
             }
         });
     }
@@ -208,15 +263,18 @@ public class MainActivity extends AppCompatActivity {
     private void SendIt(){
         exec.cancel(true);
         if(!connected){
-            Connect();
+            Connect(false);
         }
         exec.runAsync(() -> {
             String[] commands = BuildCommands();
-
+            out.println("shortmessage " + "Executing routing command(s) from " + android.os.Build.MODEL);
             for(String command : commands){
                 out.println(command);
             }
-
+            out.println("BYE");
+            connected = false;
+            //connect.setText("Test");
+            //connect.setBackgroundColor(Color.parseColor("#505050"));
             //String test = "shortmessage " + android.os.Build.MODEL + " connected";
             //out.println(test);
             //telnet.disconnect();
@@ -225,22 +283,45 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] BuildCommands(){
         int commandCount = 0;
+        int commandMultiplier = 3;
+        boolean noRoutes = false;
+        if(selected_routes[0] == false){
+            commandMultiplier--;
+        }
+        if(selected_routes[1] == false){
+            commandMultiplier--;
+        }
+        if(selected_routes[2] == false){
+            commandMultiplier--;
+        }
         for(boolean active : selected_outputs){
             if(active){commandCount++;}
         }
+        commandCount *= commandMultiplier;
         String[] commands = new String[commandCount];
-
+        //if(selected_routes[])
         for(int loopTimes = 0, commandIndex = 0; loopTimes < 16; loopTimes++){
             if(selected_outputs[loopTimes]){
-                commands[commandIndex] = "setavroute " + selected_input + " " + (loopTimes + 17);
-                commandIndex++;
+                if(selected_routes[0] == true){
+                    commands[commandIndex] = "setvideoroute " + selected_input + " " + (loopTimes + 17);
+                    commandIndex++;
+                }
+                if(selected_routes[1] == true){
+                    commands[commandIndex] = "setaudioroute " + selected_input + " " + (loopTimes + 17);
+                    commandIndex++;
+                }
+                if(selected_routes[2] == true){
+                    commands[commandIndex] = "setusbroute " + selected_input + " " + (loopTimes + 17);
+                    commandIndex++;
+                }
+
             }
         }
 
         return commands;
     }
 
-    private void Connect(){
+    private void Connect(boolean fromTest){
         exec.cancel(true);
         String host = address.getText().toString();
         int port = 23;
@@ -252,9 +333,10 @@ public class MainActivity extends AppCompatActivity {
                 //connection = new Socket(host, port);
                 out = new PrintWriter(telnet.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(telnet.getInputStream()));
-
-                String test = "shortmessage " + android.os.Build.MODEL + " Connected";
-                out.println(test);
+                if(fromTest) {
+                    String test = "shortmessage " + android.os.Build.MODEL + " Connected";
+                    out.println(test);
+                }
                 //telnet.disconnect();
                 connected = true;
             } catch (IOException e) {
