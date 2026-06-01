@@ -19,5 +19,5 @@ All commands are unencrypted and use the telnet protocol.
 
 ## Version History
 
-* 1.0
+* Beta 1.0
     * Initial Release
