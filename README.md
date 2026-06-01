@@ -15,7 +15,7 @@ All commands are unencrypted and use the telnet protocol.
 
 ### Download
 
-* Download the newest apk from here: {will add later}
+* Download the newest apk from [here](https://github.com/DD-SW/OpenDM/releases/download/beta/OpenDM.apk)
 
 ## Version History
 
